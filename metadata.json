@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "description": "",
+  "name": "Water Potability and Safety Risk Analyzer",
+  "description": "An advanced machine learning and rule-based full-stack system that analyzes water chemistry parameters to predict safety, evaluate risks, and recommend mitigation treatments.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -38,7 +38,7 @@ def get_classifiers():
         "Extra Trees": ExtraTreesClassifier(n_estimators=150, random_state=config.RANDOM_STATE, n_jobs=-1),
         "K-Nearest Neighbors": KNeighborsClassifier(n_neighbors=5, n_jobs=-1),
         "Support Vector Machine": SVC(probability=True, random_state=config.RANDOM_STATE),
-        "Gaussian Naive Bayes": Gaussian NaiveBayes()
+        "Gaussian Naive Bayes": GaussianNB()
     }
 
 def train_and_evaluate_all():

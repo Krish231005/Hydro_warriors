@@ -6,6 +6,11 @@ and listens on port 5000 for proxy requests.
 """
 
 import os
+import sys
+
+# Add parent directory to system path to ensure clean 'backend' package imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from flask import Flask
 from flask_cors import CORS
 
