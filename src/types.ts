@@ -59,6 +59,7 @@ export interface ModelMetricsResponse {
     confusion_matrix: string;
     roc_curve: string;
   };
+  trained_at?: string;
 }
 
 export interface FeatureImportance {

@@ -44,7 +44,7 @@ export default function PredictTab({
   const fields = [
     { key: "ph", label: "pH Level", unit: "pH", placeholder: "6.5 - 8.5", step: "0.01", min: "0", max: "14", desc: "Scientific scale of acidity vs alkalinity." },
     { key: "Hardness", label: "Hardness", unit: "mg/L", placeholder: "100 - 250", step: "0.1", min: "0", max: "1000", desc: "Calcium and magnesium mineral concentrations." },
-    { key: "Solids", label: "Total Dissolved Solids", unit: "ppm", placeholder: "0 - 1000", step: "1", min: "0", max: "100000", desc: "Total sum of minerals/salts suspended in water." },
+    { key: "Solids", label: "Total Dissolved Solids", unit: "ppm", placeholder: "0 - 1000", step: "0.1", min: "0", max: "100000", desc: "Total sum of minerals/salts suspended in water." },
     { key: "Chloramines", label: "Chloramines", unit: "ppm", placeholder: "0.0 - 4.0", step: "0.01", min: "0", max: "20", desc: "Disinfectant compounds safe up to 4.0 ppm." },
     { key: "Sulfate", label: "Sulfate", unit: "mg/L", placeholder: "0 - 250", step: "0.1", min: "0", max: "1000", desc: "Abundant mineral solute; WHO standard is < 250 mg/L." },
     { key: "Conductivity", label: "Conductivity", unit: "μS/cm", placeholder: "0 - 400", step: "1", min: "0", max: "3000", desc: "Electrical conductivity indicating dissolved salts." },

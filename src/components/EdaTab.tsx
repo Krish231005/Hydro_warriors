@@ -14,6 +14,8 @@ import { EdaResponse, EdaPlotDetail } from "../types";
 interface EdaTabProps {
   edaData: EdaResponse | null;
   isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
 }
 
 type PlotKeys = 
@@ -24,15 +26,35 @@ type PlotKeys =
   | "histogram_sulfate" 
   | "scatter_solids_conductivity";
 
-export default function EdaTab({ edaData, isLoading }: EdaTabProps) {
+export default function EdaTab({ edaData, isLoading, error, onRetry }: EdaTabProps) {
   const [selectedPlot, setSelectedPlot] = useState<PlotKeys>("potability_distribution");
 
-  if (isLoading || !edaData) {
+  if (isLoading) {
     return (
       <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm flex flex-col items-center justify-center min-h-[400px]">
         <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
         <h4 className="text-sm font-bold text-slate-800">Calculating Dataset Statistics...</h4>
         <p className="text-xs text-slate-400 mt-1">Running exploratory algorithms on water_potability.csv...</p>
+      </div>
+    );
+  }
+
+  if (error || !edaData) {
+    return (
+      <div className="bg-white rounded-2xl border border-amber-200 p-12 text-center shadow-sm flex flex-col items-center justify-center min-h-[400px]">
+        <div className="p-3 bg-amber-50 rounded-full text-amber-500 mb-4 animate-bounce">
+          <HelpCircle className="w-8 h-8" />
+        </div>
+        <h4 className="text-base font-bold text-slate-800">EDA Statistics Unavailable</h4>
+        <p className="text-xs text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
+          {error || "The dataset statistics could not be computed. Please ensure 'water_potability.csv' has been correctly uploaded to your '/database/' directory."}
+        </p>
+        <button
+          onClick={onRetry}
+          className="mt-6 px-4.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-md shadow-blue-100 hover:shadow-lg transition-all duration-150 cursor-pointer"
+        >
+          RETRY EDA CALCULATION
+        </button>
       </div>
     );
   }

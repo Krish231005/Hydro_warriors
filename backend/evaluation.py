@@ -24,7 +24,7 @@ PALETTE_MODELS = ["#0ea5e9", "#0f766e", "#10b981", "#f59e0b", "#6366f1", "#ec489
 
 def fig_to_base64(fig):
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight', dpi=120)
+    fig.savefig(buf, format='png', bbox_inches='tight', dpi=120)
     buf.seek(0)
     img_str = base64.b64encode(buf.read()).decode('utf-8')
     plt.close(fig)

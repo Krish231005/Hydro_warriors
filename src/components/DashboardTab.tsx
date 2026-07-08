@@ -17,8 +17,7 @@ interface DashboardTabProps {
   bestModelName: string;
   bestModelF1: number;
   importances: FeatureImportance[];
-  onTriggerRetrain: () => void;
-  isRetraining: boolean;
+  onNavigateToComparison: () => void;
   onNavigateToPredict: () => void;
 }
 
@@ -27,8 +26,7 @@ export default function DashboardTab({
   bestModelName,
   bestModelF1,
   importances,
-  onTriggerRetrain,
-  isRetraining,
+  onNavigateToComparison,
   onNavigateToPredict
 }: DashboardTabProps) {
   
@@ -134,17 +132,12 @@ export default function DashboardTab({
             </div>
             <div className="flex items-center gap-2">
               <button 
-                id="btn-retrain-dashboard"
-                onClick={onTriggerRetrain}
-                disabled={isRetraining}
-                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5 font-mono"
+                id="btn-compare-dashboard"
+                onClick={onNavigateToComparison}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1.5 font-mono"
               >
-                {isRetraining ? (
-                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <Sparkles className="w-3 h-3 text-blue-400" />
-                )}
-                {isRetraining ? "RETRAINING..." : "FORCE RETRAIN"}
+                <Sparkles className="w-3 h-3 text-blue-400" />
+                <span>COMPARE MODELS</span>
               </button>
             </div>
           </div>

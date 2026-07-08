@@ -7,8 +7,12 @@ Contains custom logging, directory initializers, and joblib model helpers.
 import os
 import sys
 import logging
+import threading
 import joblib
 from backend import config
+
+# --- THREADING LOCKS FOR CONCURRENT SAFETY ---
+plot_lock = threading.Lock()
 
 # --- CUSTOM LOGGING ---
 def setup_logger(name="WaterPotabilityAnalyzer"):

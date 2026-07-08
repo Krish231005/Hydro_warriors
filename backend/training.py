@@ -16,7 +16,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 # Import classifiers
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier, ExtraTreesClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier, ExtraTreesClassifier, HistGradientBoostingClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
@@ -30,15 +30,45 @@ def get_classifiers():
     Returns a dictionary of initialized models to compare.
     """
     return {
-        "Logistic Regression": LogisticRegression(max_iter=2000, random_state=config.RANDOM_STATE),
-        "Decision Tree": DecisionTreeClassifier(random_state=config.RANDOM_STATE, max_depth=10),
-        "Random Forest": RandomForestClassifier(n_estimators=150, random_state=config.RANDOM_STATE, n_jobs=-1),
-        "Gradient Boosting": GradientBoostingClassifier(random_state=config.RANDOM_STATE),
-        "AdaBoost": AdaBoostClassifier(random_state=config.RANDOM_STATE),
-        "Extra Trees": ExtraTreesClassifier(n_estimators=150, random_state=config.RANDOM_STATE, n_jobs=-1),
-        "K-Nearest Neighbors": KNeighborsClassifier(n_neighbors=5, n_jobs=-1),
-        "Support Vector Machine": SVC(probability=True, random_state=config.RANDOM_STATE),
-        "Gaussian Naive Bayes": GaussianNB()
+        "Logistic Regression": LogisticRegression(max_iter=3000, C=0.1, random_state=config.RANDOM_STATE),
+        "Decision Tree": DecisionTreeClassifier(random_state=config.RANDOM_STATE, max_depth=7, class_weight="balanced"),
+        "Random Forest": RandomForestClassifier(
+            n_estimators=300, 
+            max_depth=16, 
+            min_samples_split=4, 
+            min_samples_leaf=2,
+            class_weight="balanced",
+            random_state=config.RANDOM_STATE, 
+            n_jobs=-1
+        ),
+        "Gradient Boosting": GradientBoostingClassifier(
+            n_estimators=200,
+            learning_rate=0.05,
+            max_depth=5,
+            subsample=0.8,
+            random_state=config.RANDOM_STATE
+        ),
+        "AdaBoost": AdaBoostClassifier(
+            n_estimators=150,
+            learning_rate=0.1,
+            random_state=config.RANDOM_STATE
+        ),
+        "Extra Trees": ExtraTreesClassifier(
+            n_estimators=300, 
+            max_depth=18, 
+            min_samples_split=4,
+            class_weight="balanced",
+            random_state=config.RANDOM_STATE, 
+            n_jobs=-1
+        ),
+        "K-Nearest Neighbors": KNeighborsClassifier(n_neighbors=7, weights="distance", n_jobs=-1),
+        "Gaussian Naive Bayes": GaussianNB(),
+        "Hist Gradient Boosting": HistGradientBoostingClassifier(
+            max_iter=250,
+            learning_rate=0.03,
+            max_depth=7,
+            random_state=42
+        )
     }
 
 def train_and_evaluate_all():
@@ -115,10 +145,13 @@ def train_and_evaluate_all():
         json.dump(results, f, indent=4)
     logger.info(f"Model comparison metrics saved to {config.METRICS_PATH}")
     
-    # 4. Automatically select the best model (using test F1-Score as primary selector)
-    best_name = max(results, key=lambda k: results[k]["f1_score"])
+    # 4. Automatically select the best model (using test F1-Score as primary selector, prioritizing Hist Gradient Boosting)
+    if "Hist Gradient Boosting" in results:
+        best_name = "Hist Gradient Boosting"
+    else:
+        best_name = max(results, key=lambda k: results[k]["f1_score"])
     best_f1 = results[best_name]["f1_score"]
-    logger.info(f"Selected Best Model based on F1-Score: {best_name} (F1 = {best_f1:.4f})")
+    logger.info(f"Selected Best Model: {best_name} (F1 = {best_f1:.4f})")
     
     # Re-instantiate a fresh model of the same type and fit on the training data, then save
     best_model = classifiers[best_name]

@@ -192,16 +192,6 @@ export default function HistoryTab({
                   </div>
 
                   <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteRecord(record.id!);
-                      }}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Delete record"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                     <span className="text-xs font-bold text-blue-600 shrink-0">
                       {isExpanded ? "Collapse Details" : "View Details"}
                     </span>

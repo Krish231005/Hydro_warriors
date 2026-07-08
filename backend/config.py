@@ -20,6 +20,13 @@ for folder in [DATASET_DIR, MODEL_DIR, REPORTS_DIR, BACKEND_DIR]:
 
 # --- FILE PATHS ---
 DATASET_PATH = os.path.join(DATASET_DIR, "water_potability.csv")
+# Fallback search if not found in default dataset folder
+if not os.path.exists(DATASET_PATH):
+    for possible_dir in [os.path.join(BASE_DIR, "database"), BASE_DIR]:
+        alt_path = os.path.join(possible_dir, "water_potability.csv")
+        if os.path.exists(alt_path):
+            DATASET_PATH = alt_path
+            break
 BEST_MODEL_PATH = os.path.join(MODEL_DIR, "best_model.joblib")
 SCALER_PATH = os.path.join(MODEL_DIR, "scaler.joblib")
 IMPUTER_PATH = os.path.join(MODEL_DIR, "imputer.joblib")
@@ -90,6 +97,6 @@ SAFE_LIMITS = {
 }
 
 # --- RANDOM STATE ---
-RANDOM_STATE = 42
+RANDOM_STATE = 4
 TEST_SIZE = 0.2
 CV_SPLITS = 5

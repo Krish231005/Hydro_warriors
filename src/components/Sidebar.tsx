@@ -25,6 +25,7 @@ export default function Sidebar({
   const menuItems = [
     { id: "dashboard", name: "Dashboard", icon: Compass },
     { id: "eda", name: "Exploratory Data", icon: FileText },
+    { id: "comparison", name: "Model Comparison", icon: Cpu },
     { id: "predict", name: "Predict Safety", icon: Activity },
     { id: "history", name: "History Log", icon: History },
   ];

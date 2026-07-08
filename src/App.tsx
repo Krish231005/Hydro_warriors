@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./components/Sidebar";
 import DashboardTab from "./components/DashboardTab";
 import EdaTab from "./components/EdaTab";
+import ModelComparisonTab from "./components/ModelComparisonTab";
 import PredictTab from "./components/PredictTab";
 import HistoryTab from "./components/HistoryTab";
 import { 
@@ -17,7 +18,6 @@ import {
   Activity, 
   History, 
   Cpu, 
-  RefreshCw,
   TrendingUp,
   Info
 } from "lucide-react";
@@ -28,6 +28,7 @@ export default function App() {
   // --- API DATA STATES ---
   const [summary, setSummary] = useState<SummaryStats | null>(null);
   const [edaData, setEdaData] = useState<EdaResponse | null>(null);
+  const [edaError, setEdaError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<ModelMetricsResponse | null>(null);
   const [importances, setImportances] = useState<FeatureImportance[]>([]);
   const [history, setHistory] = useState<PredictionData[]>([]);
@@ -93,13 +94,17 @@ export default function App() {
   const fetchEda = async () => {
     try {
       setIsLoadingEda(true);
+      setEdaError(null);
       const res = await fetch("/api/eda");
       const data = await res.json();
       if (data.status === "success" && data.data) {
         setEdaData(data.data);
+      } else {
+        setEdaError(data.message || "Failed to load exploratory data analysis stats.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Failed to fetch EDA data, retrying or displaying default mock views:", err);
+      setEdaError(err?.message || "Server or network error. Please verify the Python backend is active.");
     } finally {
       setIsLoadingEda(false);
     }
@@ -304,12 +309,14 @@ export default function App() {
             <h1 className="text-2xl font-bold text-slate-900 font-display">
               {activeTab === "dashboard" && "Dashboard / System Overview"}
               {activeTab === "eda" && "Exploratory Data Analytics"}
+              {activeTab === "comparison" && "Model Comparison leaderboard"}
               {activeTab === "predict" && "Water Potability Analysis"}
               {activeTab === "history" && "SQLite Prediction History"}
             </h1>
             <p className="text-slate-500 text-sm">
               {activeTab === "dashboard" && "Real-time analysis of water potability and chemical concentrations."}
               {activeTab === "eda" && "Discover correlations, outliers, distributions, and Gini Gini ratios."}
+              {activeTab === "comparison" && "Deep-dive validation metrics, leaderboard standings, and ROC comparison."}
               {activeTab === "predict" && "Trigger Scikit-learn predictions and generate WHO safety reports."}
               {activeTab === "history" && "Audit past safety logs, run keyword searches, and manage files."}
             </p>
@@ -317,39 +324,23 @@ export default function App() {
           
           {/* Header Action Buttons */}
           <div className="flex gap-3">
-            <button 
-              id="btn-header-refresh"
-              onClick={() => {
-                fetchSummary();
-                fetchEda();
-                fetchMetrics();
-                fetchFeatureImportance();
-                fetchHistory();
-              }}
-              className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-              <span>SYNC DATABASE</span>
-            </button>
-            
-            {activeTab !== "predict" ? (
+            {activeTab !== "comparison" ? (
               <button 
-                id="btn-header-action"
+                id="btn-header-action-compare"
+                onClick={() => setActiveTab("comparison")}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>COMPARE MODELS</span>
+              </button>
+            ) : (
+              <button 
+                id="btn-header-action-predict"
                 onClick={() => setActiveTab("predict")}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-md shadow-blue-100 transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <Activity className="w-3.5 h-3.5" />
                 <span>TEST A SAMPLE</span>
-              </button>
-            ) : (
-              <button 
-                id="btn-header-action-retrain"
-                onClick={handleTriggerRetrain}
-                disabled={isRetraining}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <Cpu className="w-3.5 h-3.5" />
-                <span>{isRetraining ? "RETRAINING..." : "RETRAIN ALL MODELS"}</span>
               </button>
             )}
           </div>
@@ -363,8 +354,7 @@ export default function App() {
               bestModelName={bestModelName}
               bestModelF1={bestModelF1}
               importances={importances}
-              onTriggerRetrain={handleTriggerRetrain}
-              isRetraining={isRetraining}
+              onNavigateToComparison={() => setActiveTab("comparison")}
               onNavigateToPredict={() => setActiveTab("predict")}
             />
           )}
@@ -373,6 +363,15 @@ export default function App() {
             <EdaTab 
               edaData={edaData} 
               isLoading={isLoadingEda} 
+              error={edaError}
+              onRetry={fetchEda}
+            />
+          )}
+
+          {activeTab === "comparison" && (
+            <ModelComparisonTab 
+              metrics={metrics}
+              isLoading={isLoadingMetrics}
             />
           )}
 

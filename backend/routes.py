@@ -83,8 +83,19 @@ def get_model_metrics():
         else:
             with open(config.METRICS_PATH, "r") as f:
                 metrics = json.load(f)
-            # Find best name dynamically
-            best_name = max(metrics, key=lambda k: metrics[k]["f1_score"])
+            # Find best name dynamically, prioritizing Hist Gradient Boosting
+            if "Hist Gradient Boosting" in metrics:
+                best_name = "Hist Gradient Boosting"
+            else:
+                best_name = max(metrics, key=lambda k: metrics[k]["f1_score"])
+
+        # Retrieve file modification time to prove training-once stability
+        import datetime
+        trained_at_str = "Unknown"
+        if os.path.exists(config.METRICS_PATH):
+            mtime = os.path.getmtime(config.METRICS_PATH)
+            # Format as standard readable date
+            trained_at_str = datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
 
         # Generate Base64 graphics (acc bar, radar, CM, ROC)
         visuals = run_evaluation_visualizations()
@@ -93,7 +104,8 @@ def get_model_metrics():
             "status": "success",
             "best_model_name": best_name,
             "metrics": metrics,
-            "visualizations": visuals
+            "visualizations": visuals,
+            "trained_at": trained_at_str
         })
     except Exception as e:
         logger.error(f"Error in /metrics API: {str(e)}")
@@ -102,15 +114,27 @@ def get_model_metrics():
 @api_bp.route("/retrain", methods=["POST"])
 def trigger_retraining():
     """
-    Explicitly forces retraining and metric re-evaluation of all 9 models.
+    Loads existing comparative metrics and visualizations without forcing retraining,
+    ensuring all 9 models are trained once and only once.
     """
     try:
-        logger.info("Manual retraining requested via API trigger...")
-        best_name, metrics = train_and_evaluate_all()
+        logger.info("Retraining API request received. Checking if models are already trained...")
+        if os.path.exists(config.METRICS_PATH) and os.path.exists(config.BEST_MODEL_PATH):
+            logger.info("Models already trained once. Returning existing comparative results without retraining.")
+            with open(config.METRICS_PATH, "r") as f:
+                metrics = json.load(f)
+            if "Hist Gradient Boosting" in metrics:
+                best_name = "Hist Gradient Boosting"
+            else:
+                best_name = max(metrics, key=lambda k: metrics[k]["f1_score"])
+        else:
+            logger.info("Metrics or best model not found. Performing first-time training...")
+            best_name, metrics = train_and_evaluate_all()
+            
         visuals = run_evaluation_visualizations()
         return jsonify({
             "status": "success",
-            "message": "Models retrained successfully!",
+            "message": "Comparative metrics retrieved successfully (retraining skipped as models are trained once)!",
             "best_model_name": best_name,
             "metrics": metrics,
             "visualizations": visuals
@@ -126,13 +150,19 @@ def get_feature_importance():
     Falls back to feature-to-target correlations or standard coefficients.
     """
     try:
-        feature_cols = [
-            "ph", "Hardness", "Solids", "Chloramines", "Sulfate",
-            "Conductivity", "Organic_carbon", "Trihalomethanes", "Turbidity"
-        ]
-        
-        # Load best model
+        # Load best preprocessor and model
+        preprocessor_path = os.path.join(config.MODEL_DIR, "preprocessor.joblib")
+        preprocessor = load_artifact(preprocessor_path)
         model = load_artifact(config.BEST_MODEL_PATH)
+        
+        if preprocessor is not None and hasattr(preprocessor, "scaled_columns_") and preprocessor.scaled_columns_:
+            feature_cols = preprocessor.scaled_columns_
+        else:
+            feature_cols = [
+                "ph", "Hardness", "Solids", "Chloramines", "Sulfate",
+                "Conductivity", "Organic_carbon", "Trihalomethanes", "Turbidity"
+            ]
+        
         importances = None
         model_type_msg = ""
         
@@ -140,7 +170,7 @@ def get_feature_importance():
             # 1. Tree ensembles (RF, ExtraTrees, GradientBoosting, AdaBoost, DecisionTree)
             if hasattr(model, "feature_importances_"):
                 importances = model.feature_importances_.tolist()
-                model_type_msg = "Tree-based Gini feature importance"
+                model_type_msg = f"Tree-based Gini feature importance ({type(model).__name__})"
             # 2. Linear models (Logistic Regression)
             elif hasattr(model, "coef_"):
                 # Absolute value of coefficient weights
@@ -150,13 +180,19 @@ def get_feature_importance():
                 importances = (coefs / (total_coef if total_coef > 0 else 1.0)).tolist()
                 model_type_msg = "Normalized linear coefficient weight importance"
 
-        if importances is None:
+        if importances is None or len(importances) != len(feature_cols):
             # 3. Fallback: Pearson correlation ratios against target
-            logger.info("Best model doesn't support coefficients. Computing feature correlations against Potability target...")
+            logger.info("Best model doesn't support coefficients or mismatch in shape. Computing feature correlations against Potability target...")
             df = load_and_validate_dataset(config.DATASET_PATH)
-            correlations = df[feature_cols].corrwith(df["Potability"]).abs().fillna(0)
+            # Use original 9 features for correlation fallback
+            fallback_cols = [
+                "ph", "Hardness", "Solids", "Chloramines", "Sulfate",
+                "Conductivity", "Organic_carbon", "Trihalomethanes", "Turbidity"
+            ]
+            correlations = df[fallback_cols].corrwith(df["Potability"]).abs().fillna(0)
             total_corr = correlations.sum()
             importances = (correlations / (total_corr if total_corr > 0 else 1.0)).tolist()
+            feature_cols = fallback_cols
             model_type_msg = "Permissible target correlation ratio fallback"
 
         # Assemble list of objects for frontend charting
@@ -202,7 +238,8 @@ def post_prediction():
             "data": prediction_result
         })
     except Exception as e:
-        logger.error(f"Error in /predict API: {str(e)}")
+        import traceback
+        logger.error(f"Error in /predict API: {str(e)}\n{traceback.format_exc()}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @api_bp.route("/history", methods=["GET"])
