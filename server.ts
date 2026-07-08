@@ -12,8 +12,9 @@ let flaskProcess: ChildProcess | null = null;
 function startFlaskBackend() {
   console.log('🚀 Spawning Python Flask server on port 5000...');
   
-  // Use relative path or standard python3 call to start app.py
-  flaskProcess = spawn('python3', [path.join(process.cwd(), 'backend', 'app.py')]);
+  // Use 'python' on Windows, 'python3' on macOS/Linux
+  const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+  flaskProcess = spawn(pythonCmd, [path.join(process.cwd(), 'backend', 'app.py')]);
 
   flaskProcess.stdout?.on('data', (data) => {
     console.log(`🐍 [Flask]: ${data.toString().trim()}`);
